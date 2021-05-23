@@ -32,6 +32,9 @@
     <property name="text">
      <string>-------------------------------</string>
     </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLabel" name="timeLabel">
     <property name="geometry">

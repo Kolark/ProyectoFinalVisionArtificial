@@ -41,6 +41,16 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.faceOFFtimeManager.startTimer()
         self.faceONtimeManager = TimeManager()
         self.faceONtimeManager.startTimer()
+
+        self.leftPos  = 210
+        self.rightPos  = 210
+
+        self.InvitationBool = False
+        self.LoadingBool = False
+        self.LeftBool = False
+        self.CenterBool = False
+        self.RightBool = False
+
         #endregion
     
     def viewCam(self):
@@ -52,25 +62,43 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # convert image to RGB format
         #region MAQUINA DE ESTADOS
         dimensiones, face_found = Characteristics.find_face(fotograma)
+        
         if face_found:
             cv2.rectangle(fotograma, (dimensiones[0], dimensiones[1]), (dimensiones[0] + dimensiones[2], dimensiones[1] + dimensiones[3]), (255, 255, 255), 2)
+            cv2.circle(fotograma, (dimensiones[0] + dimensiones[2]//2,dimensiones[1] + dimensiones[3]//2),25,(0,255,0),1)
             self.faceOFFtimeManager.RestartTimer()
         else:
             self.faceONtimeManager.RestartTimer()
 
         if(self.estado == 0):
             print("VEN A JUGAR")
+            self.setBooleans(True,False,False,False,False)
             if(face_found):
                 self.estado = 1 
         elif(self.estado == 1):
             print("VAS A JUGAR EN " + str(5 - self.faceONtimeManager.getTimePassed()))
+            self.setBooleans(False,True,False,False,False)
             if(not face_found):
                 self.estado = 0
             elif(self.faceONtimeManager.getTimePassed() > 5):
                 self.estado = 3
         elif(self.estado == 3):
-            print("JUGANDO")
-
+            
+            cv2.rectangle(fotograma,(0,0),(self.leftPos,h),(0,255,0),5)
+            cv2.rectangle(fotograma,(w-self.rightPos,0),(w,h),(255,0,0),5)
+            posX = dimensiones[0] + dimensiones[2]//2
+            if(face_found):
+                if(posX < self.leftPos):
+                    self.setBooleans(False,False,True,False,False)
+                    print("IZQUIERDA")
+                elif(posX < w-self.rightPos):
+                    self.setBooleans(False,False,False,True,False)
+                    print("CENTRO")
+                else:
+                    self.setBooleans(False,False,False,False,True)
+                    print("DERECHA")
+            elif(int(np.round(self.faceOFFtimeManager.getTimePassed())) > 20):
+                self.estado = 4
         elif(self.estado == 4):
             print("Gracias por jugar")
                 
@@ -88,7 +116,28 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.SetImages(fotogramaRGB,self.cameraLabel)
         self.timeLabel.setText(str(np.round(self.faceOFFtimeManager.getTimePassed())))
         
+    def setBooleans(self,inv,load,left,center,right):
 
+        if(inv is True and self.InvitationBool is False):
+            print("Change to INV")
+
+        if(load is True and self.LoadingBool is False):
+            print("Change to LOAD")
+        
+        if(left is True and self.LeftBool is False):
+            print("Change to LEFT")
+
+        if(center is True and self.CenterBool is False):
+            print("Change to CENTER")
+
+        if(right is True and self.RightBool is False):
+            print("Change to RIGHT")
+
+        self.InvitationBool = inv
+        self.LoadingBool = load
+        self.LeftBool = left
+        self.CenterBool = center
+        self.RightBool = right
 
     def SetImages(self,IMG,label):
         h, w, channel = IMG.shape        
