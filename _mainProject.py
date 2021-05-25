@@ -102,6 +102,7 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             cv2.rectangle(fotograma, (0, 0), (self.leftPos, h), (0, 255, 0), 5)
             cv2.rectangle(fotograma, (w-self.rightPos, 0),
+            
                           (w, h), (255, 0, 0), 5)
             posX = dimensiones[0] + dimensiones[2]//2
             if(face_found):
@@ -142,6 +143,9 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     print("DERECHA")
             elif(int(np.round(self.faceOFFtimeManager.getTimePassed())) > 10):
                 self.estado = 0
+            else:
+                self.setBooleans(False, False, False,
+                                         True, False, False, False)
         # elif(self.estado == 4):
         #     print("Gracias por jugar")
 
