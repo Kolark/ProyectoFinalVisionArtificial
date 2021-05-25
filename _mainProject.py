@@ -17,6 +17,7 @@ from Utilities.timeManager import TimeManager
 
 from pose_prediction.pose_estimation_angles import PoseEstimation
 from pose_prediction import pose_types
+from Utilities.UDPsend import SendToUnity
 # region UI and initial Camera Capture
 # .ui file path
 uiFile = "./ui/finalUI.ui"
@@ -50,7 +51,9 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.InvitationBool = False
         self.LoadingBool = False
         self.LeftBool = False
-        self.CenterBool = False
+        self.CenterBoolNOPOSE = False
+        self.CenterBoolONEARM = False
+        self.CenterBoolTWOARM = False
         self.RightBool = False
 
         # Pose
@@ -84,13 +87,13 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if(self.estado == 0):
             print("VEN A JUGAR")
-            self.setBooleans(True, False, False, False, False)
+            self.setBooleans(True,False,False, False, False, False, False)
             if(face_found):
                 self.estado = 1
         elif(self.estado == 1):
             print("VAS A JUGAR EN " +
                   str(5 - self.faceONtimeManager.getTimePassed()))
-            self.setBooleans(False, True, False, False, False)
+            self.setBooleans(False, True,False,False, False, False, False)
             if(not face_found):
                 self.estado = 0
             elif(self.faceONtimeManager.getTimePassed() > 5):
@@ -103,7 +106,8 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             posX = dimensiones[0] + dimensiones[2]//2
             if(face_found):
                 if(posX < self.leftPos):
-                    self.setBooleans(False, False, True, False, False)
+                    # SendToUnity('RIGHT')
+                    self.setBooleans(False, False, True, False,False,False,False)
                     print("IZQUIERDA")
                 elif(posX < w-self.rightPos):
 
@@ -115,16 +119,21 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             fotograma, pose_types.TWO_ARMS_UP, self.rig)
                         if is_two_arms_pose:
                             print("Shoot")
+                            self.setBooleans(False, False,False,False,False, True, False)
                         else:
                             print("Charge")
+                            self.setBooleans(False, False,False,False,True, False, False)
                     else:
                         self.rig = None
+                        self.setBooleans(False, False,False,True,False, False, False)
+                        # SendToUnity('CENTER')
                         print("No pose")
 
-                    self.setBooleans(False, False, False, True, False)
+                    # self.setBooleans(False, False, False, True, False)
                     # print("CENTRO")
                 else:
-                    self.setBooleans(False, False, False, False, True)
+                    self.setBooleans(False, False, False, False,False,False, True)
+                    # SendToUnity('LEFT')
                     print("DERECHA")
             elif(int(np.round(self.faceOFFtimeManager.getTimePassed())) > 20):
                 self.estado = 4
@@ -139,27 +148,38 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timeLabel.setText(
             str(np.round(self.faceOFFtimeManager.getTimePassed())))
 
-    def setBooleans(self, inv, load, left, center, right):
+    def setBooleans(self, inv, load, left, centernopose,centeronearm,centertwoarm, right):
 
         if(inv is True and self.InvitationBool is False):
             print("Change to INV")
-
+            SendToUnity('INV')
         if(load is True and self.LoadingBool is False):
             print("Change to LOAD")
-
+            SendToUnity('LOAD')
         if(left is True and self.LeftBool is False):
+            SendToUnity('RIGHT')
             print("Change to LEFT")
 
-        if(center is True and self.CenterBool is False):
-            print("Change to CENTER")
+        if(centernopose is True and self.CenterBoolNOPOSE is False):
+            print("Change to CENTERNOPOSE")
+            SendToUnity('CENTER')
+        if(centeronearm is True and self.CenterBoolONEARM is False):
+            print("Change to CENTERONEARM")
+            SendToUnity('CENTER1')
+        if(centertwoarm is True and self.CenterBoolTWOARM is False):
+            print("Change to CENTERTWOARM")
+            SendToUnity('SHOOT')
 
         if(right is True and self.RightBool is False):
+            SendToUnity('LEFT')
             print("Change to RIGHT")
 
         self.InvitationBool = inv
         self.LoadingBool = load
         self.LeftBool = left
-        self.CenterBool = center
+        self.CenterBoolNOPOSE = centernopose
+        self.CenterBoolONEARM = centeronearm
+        self.CenterBoolTWOARM = centertwoarm
         self.RightBool = right
 
     def SetImages(self, IMG, label):
