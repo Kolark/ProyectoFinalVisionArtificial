@@ -1,36 +1,38 @@
-#Import libraries
-import sys,re
-#region PYQT5 libraries
+# Import libraries
+import sys
+import re
+# region PYQT5 libraries
 from PyQt5 import uic, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QImage
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QTimer
-#endregion
+# endregion
 
 import numpy as np
 import cv2
 from Utilities.faceFinder import Characteristics
 
 from Utilities.timeManager import TimeManager
-#region UI and initial Camera Capture
-#.ui file path
+
+from pose_prediction.pose_estimation_angles import PoseEstimation
+from pose_prediction import pose_types
+# region UI and initial Camera Capture
+# .ui file path
 uiFile = "./ui/finalUI.ui"
-#Load ui file
+# Load ui file
 Ui_MainWindow, QtBaseClass = uic.loadUiType(uiFile)
-#Capture video
+# Capture video
 captura = cv2.VideoCapture(0)
 
-#endregion
-
-
+# endregion
 
 
 class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
-        #region initial Setup
+        # region initial Setup
         self.setupUi(self)
         self.timer = QTimer()
         self.timer.timeout.connect(self.viewCam)
@@ -42,8 +44,8 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.faceONtimeManager = TimeManager()
         self.faceONtimeManager.startTimer()
 
-        self.leftPos  = 210
-        self.rightPos  = 210
+        self.leftPos = 210
+        self.rightPos = 210
 
         self.InvitationBool = False
         self.LoadingBool = False
@@ -51,79 +53,100 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.CenterBool = False
         self.RightBool = False
 
-        #endregion
-    
+        # Pose
+        self.pose_estimation = PoseEstimation()
+
+        self.is_pose1Arm = False
+        self.is_pose2Arms = False
+
+        self.rig = None
+
+        # endregion
+
     def viewCam(self):
-    # read imageS in BGR format
+        # read imageS in BGR format
         disponible, fotograma = captura.read()
-        fotograma = cv2.flip(fotograma,1)
+        fotograma = cv2.flip(fotograma, 1)
         # fotograma = Clases.tools.Quality.makebetter(fotograma)
-        h, w, channel = fotograma.shape    
+        h, w, channel = fotograma.shape
         # convert image to RGB format
-        #region MAQUINA DE ESTADOS
+        # region MAQUINA DE ESTADOS
         dimensiones, face_found = Characteristics.find_face(fotograma)
-        
+
         if face_found:
-            cv2.rectangle(fotograma, (dimensiones[0], dimensiones[1]), (dimensiones[0] + dimensiones[2], dimensiones[1] + dimensiones[3]), (255, 255, 255), 2)
-            cv2.circle(fotograma, (dimensiones[0] + dimensiones[2]//2,dimensiones[1] + dimensiones[3]//2),25,(0,255,0),1)
+            cv2.rectangle(fotograma, (dimensiones[0], dimensiones[1]), (
+                dimensiones[0] + dimensiones[2], dimensiones[1] + dimensiones[3]), (255, 255, 255), 2)
+            cv2.circle(fotograma, (dimensiones[0] + dimensiones[2]//2,
+                                   dimensiones[1] + dimensiones[3]//2), 25, (0, 255, 0), 1)
             self.faceOFFtimeManager.RestartTimer()
         else:
             self.faceONtimeManager.RestartTimer()
 
         if(self.estado == 0):
             print("VEN A JUGAR")
-            self.setBooleans(True,False,False,False,False)
+            self.setBooleans(True, False, False, False, False)
             if(face_found):
-                self.estado = 1 
+                self.estado = 1
         elif(self.estado == 1):
-            print("VAS A JUGAR EN " + str(5 - self.faceONtimeManager.getTimePassed()))
-            self.setBooleans(False,True,False,False,False)
+            print("VAS A JUGAR EN " +
+                  str(5 - self.faceONtimeManager.getTimePassed()))
+            self.setBooleans(False, True, False, False, False)
             if(not face_found):
                 self.estado = 0
             elif(self.faceONtimeManager.getTimePassed() > 5):
                 self.estado = 3
         elif(self.estado == 3):
-            
-            cv2.rectangle(fotograma,(0,0),(self.leftPos,h),(0,255,0),5)
-            cv2.rectangle(fotograma,(w-self.rightPos,0),(w,h),(255,0,0),5)
+
+            cv2.rectangle(fotograma, (0, 0), (self.leftPos, h), (0, 255, 0), 5)
+            cv2.rectangle(fotograma, (w-self.rightPos, 0),
+                          (w, h), (255, 0, 0), 5)
             posX = dimensiones[0] + dimensiones[2]//2
             if(face_found):
                 if(posX < self.leftPos):
-                    self.setBooleans(False,False,True,False,False)
+                    self.setBooleans(False, False, True, False, False)
                     print("IZQUIERDA")
                 elif(posX < w-self.rightPos):
-                    self.setBooleans(False,False,False,True,False)
-                    print("CENTRO")
+
+                    is_one_arm_pose, self.rig = self.pose_estimation.is_in_pose(
+                        fotograma, pose_types.ONE_ARM_UP, self.rig)
+
+                    if is_one_arm_pose:
+                        is_two_arms_pose, self.rig = self.pose_estimation.is_in_pose(
+                            fotograma, pose_types.TWO_ARMS_UP, self.rig)
+                        if is_two_arms_pose:
+                            print("Shoot")
+                        else:
+                            print("Charge")
+                    else:
+                        self.rig = None
+                        print("No pose")
+
+                    self.setBooleans(False, False, False, True, False)
+                    # print("CENTRO")
                 else:
-                    self.setBooleans(False,False,False,False,True)
+                    self.setBooleans(False, False, False, False, True)
                     print("DERECHA")
             elif(int(np.round(self.faceOFFtimeManager.getTimePassed())) > 20):
                 self.estado = 4
         elif(self.estado == 4):
             print("Gracias por jugar")
-                
 
+        # endregion
 
-
-        
-        
-        #endregion
-
-
-
-    #Set image to QLabel
+    # Set image to QLabel
         fotogramaRGB = cv2.cvtColor(fotograma, cv2.COLOR_BGR2RGB)
-        self.SetImages(fotogramaRGB,self.cameraLabel)
-        self.timeLabel.setText(str(np.round(self.faceOFFtimeManager.getTimePassed())))
-        
-    def setBooleans(self,inv,load,left,center,right):
+        self.SetImages(fotogramaRGB, self.cameraLabel)
+        self.timeLabel.setText(
+            str(np.round(self.faceOFFtimeManager.getTimePassed())))
+
+    def setBooleans(self, inv, load, left, center, right):
 
         if(inv is True and self.InvitationBool is False):
             print("Change to INV")
 
         if(load is True and self.LoadingBool is False):
             print("Change to LOAD")
-        
+
         if(left is True and self.LeftBool is False):
             print("Change to LEFT")
 
@@ -139,15 +162,12 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.CenterBool = center
         self.RightBool = right
 
-    def SetImages(self,IMG,label):
-        h, w, channel = IMG.shape        
+    def SetImages(self, IMG, label):
+        h, w, channel = IMG.shape
         step = channel * w
-        
+
         qImg = QImage(IMG.data, w, h, step, QImage.Format_RGB888)
         label.setPixmap(QPixmap.fromImage(qImg))
-        
-
-        
 
     def controlTimer(self):
         # if timer is stopped
@@ -164,10 +184,9 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.cap.release()
             # update control_bt text
 
+
 if __name__ == "__main__":
-    app =  QtWidgets.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     window = UIWindow()
     window.show()
     sys.exit(app.exec_())
-
-    
