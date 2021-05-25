@@ -5,7 +5,7 @@ import time
 
 
 UDP_IP = "127.0.0.1"
-UDP_PORT = 5065
+UDP_PORT = 5066
 
 sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
@@ -17,14 +17,17 @@ class MyThread(QThread):
     def run(self):
         while True:
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-            print(data.decode('utf-8'))
+            msg = data.decode('utf-8')
+            if(msg == "CLOSE"):
+                break
             # time.sleep(0.1)
 
 
     
 
+
 if __name__ == "__main__":
     thread = MyThread()
     thread.start()
-    thread.run()
+    # thread.run()
     print("THREAD ENDED")
