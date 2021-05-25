@@ -87,13 +87,13 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if(self.estado == 0):
             print("VEN A JUGAR")
-            self.setBooleans(True,False,False, False, False, False, False)
+            self.setBooleans(True, False, False, False, False, False, False)
             if(face_found):
                 self.estado = 1
         elif(self.estado == 1):
             print("VAS A JUGAR EN " +
                   str(5 - self.faceONtimeManager.getTimePassed()))
-            self.setBooleans(False, True,False,False, False, False, False)
+            self.setBooleans(False, True, False, False, False, False, False)
             if(not face_found):
                 self.estado = 0
             elif(self.faceONtimeManager.getTimePassed() > 5):
@@ -107,7 +107,8 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if(face_found):
                 if(posX < self.leftPos):
                     # SendToUnity('RIGHT')
-                    self.setBooleans(False, False, True, False,False,False,False)
+                    self.setBooleans(False, False, True,
+                                     False, False, False, False)
                     print("IZQUIERDA")
                 elif(posX < w-self.rightPos):
 
@@ -119,26 +120,30 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             fotograma, pose_types.TWO_ARMS_UP, self.rig)
                         if is_two_arms_pose:
                             print("Shoot")
-                            self.setBooleans(False, False,False,False,False, True, False)
+                            self.setBooleans(
+                                False, False, False, False, False, True, False)
                         else:
                             print("Charge")
-                            self.setBooleans(False, False,False,False,True, False, False)
+                            self.setBooleans(
+                                False, False, False, False, True, False, False)
                     else:
                         self.rig = None
-                        self.setBooleans(False, False,False,True,False, False, False)
+                        self.setBooleans(False, False, False,
+                                         True, False, False, False)
                         # SendToUnity('CENTER')
                         print("No pose")
 
                     # self.setBooleans(False, False, False, True, False)
                     # print("CENTRO")
                 else:
-                    self.setBooleans(False, False, False, False,False,False, True)
+                    self.setBooleans(False, False, False,
+                                     False, False, False, True)
                     # SendToUnity('LEFT')
                     print("DERECHA")
-            elif(int(np.round(self.faceOFFtimeManager.getTimePassed())) > 20):
-                self.estado = 4
-        elif(self.estado == 4):
-            print("Gracias por jugar")
+            elif(int(np.round(self.faceOFFtimeManager.getTimePassed())) > 10):
+                self.estado = 0
+        # elif(self.estado == 4):
+        #     print("Gracias por jugar")
 
         # endregion
 
@@ -148,7 +153,7 @@ class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timeLabel.setText(
             str(np.round(self.faceOFFtimeManager.getTimePassed())))
 
-    def setBooleans(self, inv, load, left, centernopose,centeronearm,centertwoarm, right):
+    def setBooleans(self, inv, load, left, centernopose, centeronearm, centertwoarm, right):
 
         if(inv is True and self.InvitationBool is False):
             print("Change to INV")
