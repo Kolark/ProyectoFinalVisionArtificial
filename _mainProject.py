@@ -8,7 +8,6 @@ from PyQt5.QtGui import QImage
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QTimer
 # endregion
-
 import numpy as np
 import cv2
 from Utilities.faceFinder import Characteristics
@@ -27,7 +26,6 @@ Ui_MainWindow, QtBaseClass = uic.loadUiType(uiFile)
 captura = cv2.VideoCapture(0)
 
 # endregion
-
 
 class UIWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
